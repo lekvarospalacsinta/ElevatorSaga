@@ -18,13 +18,13 @@
                 stopAtFloor(elevator, floorNum, direction);
             });
             elevator.on("stopped_at_floor", function(floorNum) {
-                removeFloorFromElevator(elevator, floorNum, 0);
+                removeFloorFromElevator(elevator, floorNum);
             });
         }
         function stopAtFloor(elevator, floorNum, direction)
         {
             //console.log("load",elevator.loadFactor(),"before floor",floorNum,"direction", direction, "dw", presseddw, "up", pressedup);
-            if (elevator.loadFactor() < 0.5) {
+            if (elevator.loadFactor() < 1) {
                 if (((presseddw[floorNum] > 0) && (direction === "down")) || ((pressedup[floorNum] > 0) && (direction === "up"))) {
                     //console.log("stopping");
                     elevator.destinationQueue.unshift(floorNum);
@@ -76,15 +76,41 @@
             for (var i = 0; i < elevator.destinationQueue.length; i++) {
                 if (elevator.destinationQueue[i] === floorNum) {
                     elevator.destinationQueue.splice(i--);
-                    console.log(floorNum, "delted duplicate");
+                    console.log(floorNum, "deleted duplicate");
                 }
             }
             elevator.checkDestinationQueue();
-            pressedup[floorNum] = 0;
-            presseddw[floorNum] = 0;
+            if (elevator.goingUpIndicator() === true)
+            {
+                pressedup[floorNum] = 0;
+            }
+            else
+            {
+                presseddw[floorNum] = 0;
+            }
             console.log("remove", floorNum, elevator.destinationQueue);
         }
     },
         update: function(dt, elevators, floors) {
+            if ((elevators[0].destinationQueue[0] > elevators[0].currentFloor()) || elevators[0].currentFloor() === 0) {
+                elevators[0].goingUpIndicator(true);                
+                elevators[0].goingDownIndicator(false);
+            }
+            else {
+                if ((elevators[0].destinationQueue[0] < elevators[0].currentFloor()) || elevators[0].currentFloor() === floors.length) {
+                    elevators[0].goingDownIndicator(true);
+                    elevators[0].goingUpIndicator(false);                
+                }
+                else {
+                    if (elevators[0].destinationQueue[1] < elevators[0].currentFloor()) {
+                        elevators[0].goingDownIndicator(true);
+                        elevators[0].goingUpIndicator(false);                
+                    }
+                    else if (elevators[0].destinationQueue[1] > elevators[0].currentFloor()) {
+                        elevators[0].goingUpIndicator(true);                
+                        elevators[0].goingDownIndicator(false);
+                    }
+                }
+            }
         }
 }
