@@ -1,7 +1,8 @@
 {
     init: function(elevators, floors) {
         var pressedup = [];
-        var presseddw = [];  
+        var presseddw = [];
+        var lastchoosen = 0;
         for (var i = 0; i < floors.length; i++)
         {
             pressedup[i] = 0;
@@ -9,15 +10,16 @@
             floors[i].on("up_button_pressed", function() {
                 var j = 0;
                 var k = elevators[0].loadFactor();
-                //console.log(0, "with factor" ,elevators[0].loadFactor());
+                console.log(0, "with factor" ,elevators[0].loadFactor());
                 for (var i = 1; i < elevators.length; i++){
-                    //console.log(i, "with factor" ,elevators[i].loadFactor());
-                    if (elevators[i].loadFactor() < k) {
+                    console.log(i, "with factor" ,elevators[i].loadFactor());
+                    if ((elevators[i].loadFactor() < k) && (i != lastchoosen)) {
                         k = elevators[i].loadFactor();
                         j = i;
                     }
                 }
-                //console.log(j, "choosen");
+                lastchoosen = j;
+                console.log(j, "choosen for floor", this.floorNum(), "going up");
                 addFloorToElevator(elevators[j], this.floorNum());
                 pressedup[this.floorNum()] += 1;
                 //console.log("uppressed",this.floorNum());
@@ -25,15 +27,16 @@
             floors[i].on("down_button_pressed", function() {
                 var j = 0;
                 var k = elevators[0].loadFactor();
-                //console.log(0, "with factor" ,elevators[0].loadFactor());
+                console.log(0, "with factor" ,elevators[0].loadFactor());
                 for (var i = 1; i < elevators.length; i++){
-                    //console.log(i, "with factor" ,elevators[i].loadFactor());
-                    if (elevators[i].loadFactor() < k) {
+                    console.log(i, "with factor" ,elevators[i].loadFactor());
+                    if ((elevators[i].loadFactor() < k) && i != lastchoosen) {
                         k = elevators[i].loadFactor();
                         j = i;
                     }
                 }
-                //console.log(j, "choosen");
+                lastchoosen = j;
+                console.log(j, "choosen for floor", this.floorNum(), "going down");
                 addFloorToElevator(elevators[j], this.floorNum());
                 presseddw[this.floorNum()] += 1;
                 //console.log("dwpressed",this.floorNum());
@@ -51,13 +54,11 @@
                 removeFloorFromElevator(this, floorNum);
             });
         }
-        
+
         function stopAtFloor(elevator, floorNum, direction)
         {
-            //console.log("load",elevator.loadFactor(),"before floor",floorNum,"direction", direction, "dw", presseddw, "up", pressedup);
             if (elevator.loadFactor() < 0.5) {
                 if (((presseddw[floorNum] > 0) && (direction === "down")) || ((pressedup[floorNum] > 0) && (direction === "up"))) {
-                    //console.log("stopping");
                     elevator.destinationQueue.unshift(floorNum);
                     elevator.checkDestinationQueue();
                 }
@@ -69,27 +70,21 @@
             for (var i = 0; i < elevator.destinationQueue.length; i++) {
                 if (elevator.destinationQueue[i] === floorNum) {
                     seen = true;
-                    //console.log(floorNum, "already there");
                 }
             }
             if (seen !== true) {
                 elevator.goToFloor(floorNum);
-                //elevator.destinationQueue.sort();
-                //elevator.checkDestinationQueue();
-                //console.log("add", elevator.destinationQueue);
+                sortCurrentQueue(elevator);
             }
         }
 
         function removeFloorFromElevator(elevator, floorNum) {
-            var newdest = [];
-            var newdest2 = [];
             for (var i = 0; i < elevator.destinationQueue.length; i++) {
                 if (elevator.destinationQueue[i] === floorNum) {
                     elevator.destinationQueue.splice(i--);
-                    //console.log(floorNum, "deleted duplicate");
                 }
             }
-            elevator.checkDestinationQueue();
+            sortCurrentQueue(elevator);
             if (elevator.goingUpIndicator() === true)
             {
                 pressedup[floorNum] = 0;
@@ -98,7 +93,35 @@
             {
                 presseddw[floorNum] = 0;
             }
-            //console.log("remove", floorNum, elevator.destinationQueue);
+        }
+
+        function sortCurrentQueue(elevator) {
+            // check if it makes sense sorting, array is at least two elements
+            if (elevator.destinationQueue.length > 1) {
+                var allsmaller = true;
+                var allbigger = true;
+                // check if all elements are all bigger, or all smaller then the current floor
+                for (var i = 0; i < elevator.destinationQueue.length; i++) {
+                    if (elevator.destinationQueue[i] < elevator.currentFloor()) {
+                        allbigger = false;
+                    }
+                    else {
+                        allsmaller = false;
+                    }
+                }
+                if (allbigger === true) {
+                    elevator.destinationQueue.sort();
+                }
+                if (allsmaller === true) {
+                    elevator.destinationQueue.sort();
+                    elevator.destinationQueue.reverse();
+                }
+                elevator.checkDestinationQueue();
+            }
+        }
+
+        function lookForElevator(elevator) {
+
         }
     },
         update: function(dt, elevators, floors) {
