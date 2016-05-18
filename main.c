@@ -3,48 +3,46 @@
         var pressedup = [];
         var presseddw = [];
         var lastchoosen = 0;
-        for (var i = 0; i < floors.length; i++)
+        for (var ii = 0; ii < floors.length; ii++)
         {
-            pressedup[i] = 0;
-            presseddw[i] = 0;
-            floors[i].on("up_button_pressed", function() {
+            pressedup[ii] = 0;
+            presseddw[ii] = 0;
+            floors[ii].on("up_button_pressed", function() {
                 var j = 0;
                 var k = elevators[0].loadFactor();
-                console.log(0, "with factor" ,elevators[0].loadFactor());
+                //console.log(0, "with factor" ,elevators[0].loadFactor());
                 for (var i = 1; i < elevators.length; i++){
-                    console.log(i, "with factor" ,elevators[i].loadFactor());
+                    //console.log(i, "with factor" ,elevators[i].loadFactor());
                     if ((elevators[i].loadFactor() < k) && (i != lastchoosen)) {
                         k = elevators[i].loadFactor();
                         j = i;
                     }
                 }
                 lastchoosen = j;
-                console.log(j, "choosen for floor", this.floorNum(), "going up");
+                //console.log(j, "choosen for floor", this.floorNum(), "going up");
                 addFloorToElevator(elevators[j], this.floorNum());
                 pressedup[this.floorNum()] += 1;
-                //console.log("uppressed",this.floorNum());
             });
-            floors[i].on("down_button_pressed", function() {
+            floors[ii].on("down_button_pressed", function() {
                 var j = 0;
                 var k = elevators[0].loadFactor();
-                console.log(0, "with factor" ,elevators[0].loadFactor());
+                //console.log(0, "with factor" ,elevators[0].loadFactor());
                 for (var i = 1; i < elevators.length; i++){
-                    console.log(i, "with factor" ,elevators[i].loadFactor());
-                    if ((elevators[i].loadFactor() < k) && i != lastchoosen) {
+                    //console.log(i, "with factor" ,elevators[i].loadFactor());
+                    if ((elevators[i].loadFactor() < k) && (i != lastchoosen)) {
                         k = elevators[i].loadFactor();
                         j = i;
                     }
                 }
                 lastchoosen = j;
-                console.log(j, "choosen for floor", this.floorNum(), "going down");
+                //console.log(j, "choosen for floor", this.floorNum(), "going down");
                 addFloorToElevator(elevators[j], this.floorNum());
                 presseddw[this.floorNum()] += 1;
-                //console.log("dwpressed",this.floorNum());
             });
         }
-        for (var i = 0; i < elevators.length; i++)
+        for (var ii = 0; ii < elevators.length; ii++)
         {
-            var elevator = elevators[i];
+            var elevator = elevators[ii];
             elevator.on("idle", function()                         { addFloorToElevator(this, 0); });
             elevator.on("floor_button_pressed", function(floorNum) { addFloorToElevator(this, floorNum); });
             elevator.on("passing_floor", function(floorNum, direction) {
@@ -57,8 +55,10 @@
 
         function stopAtFloor(elevator, floorNum, direction)
         {
-            if (elevator.loadFactor() < 0.5) {
-                if (((presseddw[floorNum] > 0) && (direction === "down")) || ((pressedup[floorNum] > 0) && (direction === "up"))) {
+            console.log(floorNum, elevator.loadFactor(), direction, "dw", presseddw[floorNum], "up", pressedup[floorNum]);
+            if (elevator.loadFactor() < 0.8) {
+                if (((presseddw[floorNum] > 0) && (direction === "down")) ||
+                    ((pressedup[floorNum] > 0) && (direction === "up"))) {
                     elevator.destinationQueue.unshift(floorNum);
                     elevator.checkDestinationQueue();
                 }
@@ -87,11 +87,21 @@
             sortCurrentQueue(elevator);
             if (elevator.goingUpIndicator() === true)
             {
-                pressedup[floorNum] = 0;
+                if (pressedup[floorNum] > elevator.maxPassengerCount) {
+                    pressedup[floorNum] -= elevator.maxPassengerCount;
+                }
+                else {
+                    pressedup[floorNum] = 0;
+                }
             }
             else
             {
-                presseddw[floorNum] = 0;
+                if (presseddw[floorNum] > elevator.maxPassengerCount) {
+                    presseddw[floorNum] -= elevator.maxPassengerCount;
+                }
+                else {
+                    presseddw[floorNum] = 0;
+                }
             }
         }
 
